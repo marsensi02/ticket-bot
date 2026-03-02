@@ -5,21 +5,53 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
-  Events
-} from 'discord.js';
+  Events,
+  REST,
+  Routes,
+  SlashCommandBuilder
+} from "discord.js";
+
+const TOKEN = process.env.TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+const GUILD_ID = process.env.GUILD_ID;
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-const TOKEN = process.env.TOKEN;
-
 let ticketData = {};
 
-client.once(Events.ClientReady, () => {
-  console.log(`Bot aktif sebagai ${client.user.tag}`);
-});
+// =======================
+// AUTO REGISTER COMMAND
+// =======================
+async function registerCommands() {
 
+  const commands = [
+    new SlashCommandBuilder()
+      .setName("ticket")
+      .setDescription("Menampilkan Ticket Candy Dashboard")
+      .toJSON()
+  ];
+
+  const rest = new REST({ version: "10" }).setToken(TOKEN);
+
+  try {
+    console.log("Mendaftarkan slash command...");
+
+    await rest.put(
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+      { body: commands }
+    );
+
+    console.log("Slash command berhasil didaftarkan!");
+  } catch (error) {
+    console.error("Gagal daftar command:", error);
+  }
+}
+
+// =======================
+// DASHBOARD
+// =======================
 function generateDashboard() {
 
   let description = "";
@@ -47,13 +79,13 @@ function generateDashboard() {
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('sendback')
-      .setLabel('Sendback Ticket')
+      .setCustomId("sendback")
+      .setLabel("Sendback Ticket")
       .setStyle(ButtonStyle.Danger),
 
     new ButtonBuilder()
-      .setCustomId('keep')
-      .setLabel('Keep Ticket')
+      .setCustomId("keep")
+      .setLabel("Keep Ticket")
       .setStyle(ButtonStyle.Success)
   );
 
@@ -63,8 +95,28 @@ function generateDashboard() {
   };
 }
 
+// =======================
+// BOT READY
+// =======================
+client.once(Events.ClientReady, async () => {
+  console.log(`Bot aktif sebagai ${client.user.tag}`);
+  await registerCommands();
+});
+
+// =======================
+// INTERACTION HANDLER
+// =======================
 client.on(Events.InteractionCreate, async interaction => {
 
+  // Slash command
+  if (interaction.isChatInputCommand()) {
+
+    if (interaction.commandName === "ticket") {
+      await interaction.reply(generateDashboard());
+    }
+  }
+
+  // Button
   if (interaction.isButton()) {
 
     const userId = interaction.user.id;
