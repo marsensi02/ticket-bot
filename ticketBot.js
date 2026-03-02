@@ -54,23 +54,25 @@ async function registerCommands() {
 // =======================
 function generateDashboard() {
 
-  let description = "";
+  let sendbackUsers = [];
+  let keepUsers = [];
 
-  const users = Object.values(ticketData);
+  Object.values(ticketData).forEach(user => {
+    if (user.choice === "sendback") {
+      sendbackUsers.push(user.username);
+    }
+    if (user.choice === "keep") {
+      keepUsers.push(user.username);
+    }
+  });
 
-  if (users.length === 0) {
-    description = "Belum ada data ticket.";
-  } else {
+  const description = `
+🔴 **Sendback Ticket (${sendbackUsers.length})**
+${sendbackUsers.length ? sendbackUsers.map(u => `• ${u}`).join("\n") : "Belum ada"}
 
-    users.sort((a, b) =>
-      (b.sendback + b.keep) - (a.sendback + a.keep)
-    );
-
-    description = users.map((u, i) => {
-      const total = u.sendback + u.keep;
-      return `${i + 1}. **${u.username}** → 🔴 ${u.sendback} | 🟢 ${u.keep} | Total: ${total}`;
-    }).join("\n");
-  }
+🟢 **Keep Ticket (${keepUsers.length})**
+${keepUsers.length ? keepUsers.map(u => `• ${u}`).join("\n") : "Belum ada"}
+`;
 
   const embed = new EmbedBuilder()
     .setTitle("🎟 TICKET CANDY DASHBOARD")
@@ -119,27 +121,28 @@ client.on(Events.InteractionCreate, async interaction => {
   // Button
   if (interaction.isButton()) {
 
-    const userId = interaction.user.id;
-    const username = interaction.user.username;
+	const userId = interaction.user.id;
+	const username = interaction.user.username;
 
-    if (!ticketData[userId]) {
-      ticketData[userId] = {
-        username,
-        sendback: 0,
-        keep: 0
-      };
-    }
+	// Jika belum ada, buat data baru
+	if (!ticketData[userId]) {
+		ticketData[userId] = {
+			username,
+			choice: null
+		};
+	}
 
-    if (interaction.customId === "sendback") {
-      ticketData[userId].sendback++;
-    }
+	// Set pilihan (overwrite, bukan tambah)
+	if (interaction.customId === "sendback") {
+		ticketData[userId].choice = "sendback";
+	}
 
-    if (interaction.customId === "keep") {
-      ticketData[userId].keep++;
-    }
+	if (interaction.customId === "keep") {
+		ticketData[userId].choice = "keep";
+	}
 
-    await interaction.update(generateDashboard());
-  }
+	await interaction.update(generateDashboard());
+	}
 });
 
 client.login(TOKEN);
