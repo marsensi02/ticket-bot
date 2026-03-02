@@ -1,16 +1,12 @@
 {
-  "name": "ticket-candy",
+  "name": "ticket-bot",
   "version": "1.0.0",
-  "description": "",
+  "type": "module",
   "main": "ticketBot.js",
   "scripts": {
-	"start": "node ticketBot.js" 
+    "start": "node ticketBot.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "discord.js": "^13.17.1"
+    "discord.js": "^14.14.1"
   }
 }
